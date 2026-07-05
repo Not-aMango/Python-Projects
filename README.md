@@ -1,3 +1,3 @@
 # Python-Projects
 A place to put all my python projects in
-Author- NotaMango
+Author- NotaMango / Future Software Engineer
