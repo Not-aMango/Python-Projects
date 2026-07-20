@@ -2,17 +2,17 @@
 
 import pyperclip, sys
 
-points = pyperclip.paste().split('\n')
-sentences = ''
+if len(sys.argv) != 2:
+    print("Usage: bullet -a | -r")
+    sys.exit(1)
 
-def yes():
-    global sentences
-    for sentence in points: sentences = sentences + f'• {sentence}\n'
-def no():
-    global sentences
-    for sentence in points: sentences = sentences + sentence[2:]
+points = [item for item in pyperclip.paste().split('\n') if item!= '']
 
-if sys.argv[1] == '-a': yes()
-elif sys.argv[1] == '-r': no()
+if sys.argv[1] == '-a':result = '\n'.join(f'• {statement}' for statement in points)
+elif sys.argv[1] == '-r':result = '\n'.join(statement[2:] for statement in points)
+else:
+    print("Wrong Format")
+    sys.exit(1)
 
-pyperclip.copy(sentences)
+pyperclip.copy(result)
+print("Clipboard Updated")
