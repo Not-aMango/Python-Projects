@@ -2,23 +2,43 @@ from PIL import Image,ImageStat
 import time
 from pathlib import Path
 import numpy
+from tkinter import filedialog
 
 start = time.perf_counter()
 
 print('This program converts any given image into a Photo-Mosaic made entirely from tiny tiles/pieces of another image.\n'
       '(Code viewers note - anything with shrek written on it is just the second image :) )\n')
 
-img = Image.open(input('Enter an Image dir. you want to refrence from: ')).convert('RGB')
+print('Select Reference Image: ')
+img_path = filedialog.askopenfilename(
+    title= 'Select Reference Image',
+    initialdir=Path.home(),
+    filetypes=[
+            ("Image files", "*.jpg *.jpeg *.png *.webp"),
+            ("All files", "*.*")
+        ]
+)
+print('Referenced Image dir. : '+img_path)
+img = Image.open(img_path).convert('RGB')
 size_img = img.size
 
-shrek_img = Image.open(input('Enter the Image dir., you want the above Image to look like: ')).convert('RGB')
-size_shrek = shrek_img.size
+print('\nSelect Target Image:')
+shrek_path = filedialog.askopenfilename(
+    title='Select Target Image',
+    initialdir=Path.home(),
+    filetypes=[
+            ("Image files", "*.jpg *.jpeg *.png *.webp"),
+            ("All files", "*.*")
+     ]
+)
 
-Path.mkdir(Path.home()/'image_converter/crops/',parents=True)
+print('Targeted Image Dir. : '+shrek_path)
+shrek_img = Image.open(shrek_path).convert('RGB')
+size_shrek = shrek_img.size
 
 print()
 print(size_img,size_shrek)
-d = int(input('Enter how dense you want the image to be (ideal-20): '))
+d = int(input('Enter how dense you want the image to be (ideal-20) - (More number means less clear image but fast output time and vice versa)\n : '))
 print('\nProcessing...')
 
 def image():
@@ -38,7 +58,6 @@ def image():
 
             i+=1
     print('Got first image rgb values')
-    print(f'Crops Saved at: {Path.home()}/image_converter/crops')
     return  img_dic, img_tiles
 
 def shrek():
@@ -66,7 +85,7 @@ def closest_rgb(shrek_dic, img_dic):
     img_array = numpy.array(list(img_dic.values()))
     shrek_array = numpy.array(list(shrek_dic.values()))
 
-    img_tiles = list(img_dic.keys())
+    img_tile_numbers = list(img_dic.keys())
     shrek_tiles = list(shrek_dic.keys())
 
     for i, rgb in enumerate(shrek_array):
@@ -75,7 +94,7 @@ def closest_rgb(shrek_dic, img_dic):
         closest = numpy.argmin(distance)
 
         shrek_tile = shrek_tiles[i]
-        tile = img_tiles[closest]
+        tile = img_tile_numbers[closest]
 
         match[shrek_tile] = tile
 
@@ -105,7 +124,11 @@ shrek_dic = shrek()
 match = closest_rgb(shrek_dic, img_dic)
 craft = crafter()
 
-craft.save(Path(Path.home()/'image_converter/converted_img.jpg'))
+output_dir = Path.home() / 'image_converter'
+output_dir.mkdir(parents=True, exist_ok=True)
+output_path = output_dir / 'converted_img.jpg'
+
+craft.save(output_path)
 craft.show()
 print(f'Image Saved at: {Path.home()}/image_converter/converted_img.jpg')
 
