@@ -25,12 +25,13 @@ print('\nProcessing...')
 def image():
     print('\nGetting first image rgb values and saving crops...')
     img_dic = {}
+    img_tiles = {}
     i=1
     for x in range(0,size_img[0] - (d-1),d):
         for y in range(0,size_img[1] - (d-1),d):
             crop_img = img.crop((x,y , x+d,y+d))
 
-            crop_img.save(Path.home() / f'image_converter/crops/{i}.jpg')
+            img_tiles[i] = crop_img
 
             mean_img = tuple(int(x) for x in ImageStat.Stat(crop_img).mean)
 
@@ -39,7 +40,7 @@ def image():
             i+=1
     print('Got first image rgb values')
     print(f'Crops Saved at: {Path.home()}/image_converter/crops')
-    return  img_dic
+    return  img_dic, img_tiles
 
 def shrek():
     print('\nGetting second image rgb values')
@@ -91,7 +92,7 @@ def crafter():
     for x in range(0, craft_size[0] - (d-1), d):
         for y in range(0, craft_size[1] - (d-1), d):
             tile = match[i]
-            tile_img = Image.open(Path(Path.home() / f'image_converter/crops/{tile}.jpg'))
+            tile_img = img_tiles[tile]
 
             craft.paste(tile_img, (x,y))
 
@@ -100,7 +101,7 @@ def crafter():
     print('Crafted a new Image')
     return craft
 
-img_dic = image()
+img_dic, img_tiles = image()
 shrek_dic = shrek()
 match = closest_rgb(shrek_dic, img_dic)
 craft = crafter()
