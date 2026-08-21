@@ -1,13 +1,21 @@
 from PIL import Image,ImageStat
 from pathlib import Path
+from tkinter import filedialog
 
 print('This program pixelates any given image to make it look like pixelated retro-style image.\n')
 
-directory = input("Enter an absolute image dir. : ")
+directory = filedialog.askopenfilename(
+    title='Enter Imager Directory',
+    initialdir=Path.home(),
+    filetypes=[
+            ("Image files", "*.jpg *.jpeg *.png *.webp"),
+            ("All files", "*.*")
+        ]
+)
 image = Image.open(directory).convert('RGBA')
 size = image.size
 
-d = int(input('Enter pixel density(ideal 10 -> less number means more detailed image) : '))
+d = int(input('Enter pixel density(ideal 10 -> less number means more detailed image and more output time.) : '))
 
 def pixelify(image):
     print('\nProcessing Image\n')
