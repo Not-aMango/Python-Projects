@@ -30,4 +30,4 @@ try:
     print('Done.')
 
 except Exception:
-    print('Usage :\n => resize image-directory width x height (in pixels - default = 1920 x 1080) -s (-s = save / optional)')
+    print('Usage :\n => resize image-directory width x height (in pixels - default = 1920 x 1080) -s')
