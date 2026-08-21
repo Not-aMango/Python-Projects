@@ -1,7 +1,6 @@
 from PIL import Image,ImageStat
 import time
 from pathlib import Path
-from shutil import rmtree
 import numpy
 
 start = time.perf_counter()
@@ -109,7 +108,6 @@ craft = crafter()
 craft.save(Path(Path.home()/'image_converter/converted_img.jpg'))
 craft.show()
 print(f'Image Saved at: {Path.home()}/image_converter/converted_img.jpg')
-rmtree(Path.home()/'image_converter/crops/')
 
 stop = time.perf_counter()
 print(f'Execution Time: {(stop-start)/60} mins')
