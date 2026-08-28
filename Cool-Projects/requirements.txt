@@ -1,0 +1,7 @@
+Python Libraries you will need to run my codes:
+
+numpy        : pip install numpy
+Pillow (PIL) : pip install Pillow
+customtkinter: pip install customtkinter
+requests     : pip install requests
+qrcode       : pip install qrcode
