@@ -11,8 +11,8 @@ ctk.set_default_color_theme("blue")
 class Qr_gui():
     def __init__(self):
         #title
-        self.title = ctk.CTkLabel(app,text='QRify',font=ctk.CTkFont(size=50),fg_color='transparent',text_color='#f2f2f2')
-        self.subtext = ctk.CTkLabel(app,text='- Generate QR-codes instantly',font=ctk.CTkFont(size=25,weight='bold'),
+        self.title = ctk.CTkLabel(app,text='ℚ𝕣𝕚𝕗𝕪',font=ctk.CTkFont(size=50,weight='bold'),fg_color='transparent',text_color='#f2f2f2')
+        self.subtext = ctk.CTkLabel(app,text='- 𝙶𝚎𝚗𝚎𝚛𝚊𝚝𝚎 𝚀𝚁-𝚌𝚘𝚍𝚎𝚜 𝚒𝚗𝚜𝚝𝚊𝚗𝚝𝚕𝚢',font=ctk.CTkFont(size=25,weight='bold'),
                                     fg_color='transparent',text_color='#9da3ae')
         self.title_bar = ctk.CTkProgressBar(app,width=125,progress_color='cyan')
 
@@ -63,6 +63,7 @@ class Qr_gui():
         self.qr.save(filepath)
         text = f'Saved to: {filepath}'
         self.save_path.configure(text=text)
+        self.entry.delete(0, 'end')
 
     def qr_generator(self):
         if self.entry.get() == '':
