@@ -66,6 +66,11 @@ class Qr_gui():
         self.entry.delete(0, 'end')
 
     def qr_generator(self):
+        self.save_path.configure(text='')
+        self.save_path.place_forget()
+        self.save_button.place_forget()
+        self.generated_or_not.place_forget()
+
         if self.entry.get() == '':
             self.entry.configure(border_color='red')
             self.entry_fallback.configure(text_color='red')
