@@ -83,6 +83,7 @@ class MorseCode():
         self.copy2 = ctk.CTkButton(self.tab2,font=ctk.CTkFont(size=15),width=80,height=30,border_width=2,fg_color='transparent',command=self.clipboard2)
 
     def text_to_morse(self):
+        self.copy1.place_forget()
         self.display_box1.configure(state='normal')
         self.display_box1.delete(0.0,'end')
         word = self.entry1.get(0.0,'end').upper()
@@ -95,9 +96,11 @@ class MorseCode():
         self.display_box1.insert(0.0,morsecode)
         self.display_box1.configure(state='disable')
         self.copy1.configure(text='Copy to Clipboard')
-        self.copy1.place(relx=0.5,rely=0.95,anchor='center')
+        self.tab1.after(200,
+                        lambda: self.copy1.place(relx=0.5,rely=0.95,anchor='center'))
 
     def morse_to_text(self):
+        self.copy2.place_forget()
         self.display_box2.configure(state='normal')
         self.display_box2.delete(0.0, 'end')
         morse_statement = self.entry2.get(0.0,'end').strip().split(" ")
@@ -110,7 +113,8 @@ class MorseCode():
         self.display_box2.insert(0.0, text)
         self.display_box2.configure(state='disable')
         self.copy2.configure(text='Copy to Clipboard')
-        self.copy2.place(relx=0.5, rely=0.95, anchor='center')
+        self.tab1.after(200,
+                        lambda: self.copy2.place(relx=0.5, rely=0.95, anchor='center'))
 
     def error_layer_1(self):
         if not self.entry1.get("0.0", "end").strip():
