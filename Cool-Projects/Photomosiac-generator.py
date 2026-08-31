@@ -1,3 +1,4 @@
+from json import __main__
 
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
@@ -359,7 +360,7 @@ class PhotoMosaicApp(ctk.CTk):
     def set_preview(self, label, path):
         try:
             image = Image.open(path).convert("RGB")
-            image.thumbnail((440, 420))
+            image.thumbnail((700, 700))
             tk_img = ImageTk.PhotoImage(image)
             label.configure(image=tk_img, text="")
             label.image = tk_img
@@ -555,6 +556,6 @@ class PhotoMosaicApp(ctk.CTk):
         except Exception as exc:
             messagebox.showerror("Save Error", str(exc))
 
-
-app = PhotoMosaicApp()
-app.mainloop()
+if __name__ == '__main__':
+    app = PhotoMosaicApp()
+    app.mainloop()
