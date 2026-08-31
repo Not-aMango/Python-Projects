@@ -1,0 +1,2 @@
+This is a QR-Code generator in python, with a customtkinter gui
+It can convert any given text to Qr codes instantly with a save feature.

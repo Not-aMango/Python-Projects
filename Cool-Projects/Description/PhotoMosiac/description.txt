@@ -1,0 +1,1 @@
+A Python photomosaic generator that recreates a target image using hundreds of tiny tiles from a reference image. It analyzes RGB values, finds the closest matching tile for each region, and assembles the final mosaic with a CustomTkinter GUI.

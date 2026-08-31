@@ -1,0 +1,3 @@
+This is a Malware made on python, that walks into all your directories in home and
+spams a random fox image that it extracts from the internet to all your directories.
+Spam Speed it reached on my PC- 12,000 fox images per second

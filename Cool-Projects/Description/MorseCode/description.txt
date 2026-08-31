@@ -1,0 +1,4 @@
+This project is a:
+Morsecode to Text and
+Text to MorseCode generator
+with CustomTkinter Gui, it can copy output too.
