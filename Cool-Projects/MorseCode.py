@@ -71,7 +71,7 @@ class MorseCode():
 
         # fancy texts 1
         self.generated = ctk.CTkLabel(self.frame1, text_color='#60a66a', text='● Generated')
-        self.enter_text_1 = ctk.CTkLabel(self.frame1,text_color='#ff2727',text= '● Enter Text')
+        self.enter_text_1 = ctk.CTkLabel(self.frame1,text_color='#dc143c',text= '● Enter Text')
 
         #Text to MorseCode
         # frame2
@@ -114,7 +114,7 @@ class MorseCode():
 
         #fancy texts 2
         self.generated2 = ctk.CTkLabel(self.frame2,text_color='#60a66a',text= '● Generated')
-        self.enter_text_2 = ctk.CTkLabel(self.frame2,text_color='#ff2727',text= '● Enter MorseCode')
+        self.enter_text_2 = ctk.CTkLabel(self.frame2,text_color='#dc143c',text= '● Enter MorseCode')
 
     def text_to_morse(self):
         self.displaybox1.configure(state='normal')
