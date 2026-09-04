@@ -1,0 +1,1 @@
+Convert any given Image into it 's Ascii counterpart using just symbols, letters and text-based colors
