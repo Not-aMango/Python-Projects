@@ -13,6 +13,7 @@ class Image_Ascii():
         self.image = Image.open(image_path).convert('RGBA')
         self.new_size = None
 
+        self.characters = int(input('Enter Characters per line (200 average quality, 250 ideal quality , 300 for a better quality, 350/400 for best quality): ').strip())
         self.version = input('Do you want a colored version [y/N]: ').lower()
 
         self.brightness_values = []
@@ -22,7 +23,7 @@ class Image_Ascii():
 
     def resizer(self):
         size = self.image.size
-        self.new_size = (300,round(300/size[0] * size[1] * 0.45))
+        self.new_size = (self.characters,round(self.characters/size[0] * size[1] * 0.45))
         self.image = self.image.resize(self.new_size).convert('RGBA')
 
     def get_brightness(self):
@@ -30,7 +31,7 @@ class Image_Ascii():
             for x in range(self.new_size[0]):
                 pixel = self.image.getpixel((x,y))
                 r,g,b,a = pixel
-                self.colors.append((r,g,b))
+                self.colors.append((r,g,b,a))
                 brightness = 0.299*r + 0.587*g + 0.114*b
                 self.brightness_values.append(round(brightness))
 
