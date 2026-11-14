@@ -1,91 +1,69 @@
-from json import __main__
-
-import customtkinter as ctk
-from tkinter import filedialog, messagebox
-from pathlib import Path
-from PIL import Image, ImageTk
 import threading
 import time
+from pathlib import Path
+from tkinter import filedialog, messagebox
 
-# ---------------------------------------------------------------------------
-# ORIGINAL MOSAIC CODE
-# ---------------------------------------------------------------------------
-
-from PIL import Image,ImageStat
-import time as _original_time
-from pathlib import Path as _OriginalPath
+import customtkinter as ctk
 import numpy
-
-# Globals used by the original functions
-img = None
-shrek_img = None
-size_img = None
-size_shrek = None
-d = 20
-img_dic = {}
-img_tiles = {}
-shrek_dic = {}
-match = {}
-craft = None
+from PIL import Image, ImageStat, ImageTk
 
 
-def image():
-    img_dic = {}
-    img_tiles = {}
-    i=1
-    for x in range(0,size_img[0] - (d-1),d):
-        for y in range(0,size_img[1] - (d-1),d):
-            crop_img = img.crop((x,y , x+d,y+d))
-            img_tiles[i] = crop_img
-            mean_img = tuple(int(x) for x in ImageStat.Stat(crop_img).mean)
-            img_dic.update({i:mean_img})
-            i+=1
+# ---------------------------------------------------------------------------
+# MOSAIC LOGIC
+# ---------------------------------------------------------------------------
 
-    return  img_dic, img_tiles
+class Mosaic:
+    def __init__(self, reference_path, target_path, d):
+        self.img = Image.open(reference_path).convert("RGB")
+        self.shrek_img = Image.open(target_path).convert("RGB")
+        self.d = d
 
+    def _tiles(self, picture):
+        d = self.d
+        width, height = picture.size
+        return [
+            picture.crop((x, y, x + d, y + d))
+            for x in range(0, width - (d - 1), d)
+            for y in range(0, height - (d - 1), d)
+        ]
 
-def shrek():
-    shrek_dic = {}
-    i = 1
-    for x in range(0,size_shrek[0] - (d-1),d):
-        for y in range(0,size_shrek[1] - (d-1),d):
-            crop_shrek = shrek_img.crop((x,y , x+d,y+d))
-            mean_shrek = tuple(int(x) for x in ImageStat.Stat(crop_shrek).mean)
-            shrek_dic.update({i:mean_shrek})
-            i+=1
+    @staticmethod
+    def _mean(tile):
+        return tuple(int(c) for c in ImageStat.Stat(tile).mean)
 
-    return  shrek_dic
+    def image(self):
+        img_tiles = self._tiles(self.img)
+        img_means = [self._mean(tile) for tile in img_tiles]
+        return img_means, img_tiles
 
+    def shrek(self):
+        return [self._mean(tile) for tile in self._tiles(self.shrek_img)]
 
-def closest_rgb(shrek_dic, img_dic):
-    match = {}
-    img_array = numpy.array(list(img_dic.values()))
-    shrek_array = numpy.array(list(shrek_dic.values()))
-    img_tile_numbers = list(img_dic.keys())
-    shrek_tiles = list(shrek_dic.keys())
+    @staticmethod
+    def closest_rgb(shrek_means, img_means):
+        img_array = numpy.array(img_means)
+        return [
+            int(numpy.argmin(numpy.sum((img_array - rgb) ** 2, axis=1)))
+            for rgb in numpy.array(shrek_means)
+        ]
 
-    for i, rgb in enumerate(shrek_array):
-        distance = numpy.sum((img_array - rgb) ** 2, axis=1)
-        closest = numpy.argmin(distance)
-        shrek_tile = shrek_tiles[i]
-        tile = img_tile_numbers[closest]
-        match[shrek_tile] = tile
+    def crafter(self, img_tiles, match):
+        d = self.d
+        width, height = self.shrek_img.size
+        craft = Image.new("RGB", self.shrek_img.size)
+        positions = [
+            (x, y)
+            for x in range(0, width - (d - 1), d)
+            for y in range(0, height - (d - 1), d)
+        ]
+        for tile, position in zip(match, positions):
+            craft.paste(img_tiles[tile], position)
+        return craft
 
-    return match
-
-
-def crafter():
-    craft = Image.new("RGB", size_shrek)
-    craft_size = craft.size
-    i=1
-    for x in range(0, craft_size[0] - (d-1), d):
-        for y in range(0, craft_size[1] - (d-1), d):
-            tile = match[i]
-            tile_img = img_tiles[tile]
-            craft.paste(tile_img, (x,y))
-            i+=1
-
-    return craft
+    def build(self):
+        img_means, img_tiles = self.image()
+        match = self.closest_rgb(self.shrek(), img_means)
+        return self.crafter(img_tiles, match)
 
 
 # ---------------------------------------------------------------------------
@@ -113,37 +91,36 @@ class PhotoMosaicApp(ctk.CTk):
         self.grid_rowconfigure(0, weight=1)
 
         # ---------------- LEFT SIDEBAR ----------------
-        self.sidebar = ctk.CTkFrame(self, width=300, corner_radius=0)
-        self.sidebar.grid(row=0, column=0, sticky="nsew")
-        self.sidebar.grid_propagate(False)
+        sidebar = ctk.CTkFrame(self, width=300, corner_radius=0)
+        sidebar.grid(row=0, column=0, sticky="nsew")
+        sidebar.grid_propagate(False)
 
         ctk.CTkLabel(
-            self.sidebar,
+            sidebar,
             text="PHOTO\nMOSAIC",
             font=ctk.CTkFont(size=30, weight="bold"),
             justify="left"
         ).pack(anchor="w", padx=28, pady=(36, 5))
 
         ctk.CTkLabel(
-            self.sidebar,
+            sidebar,
             text="Turn one image into another\nusing tiny pieces of a reference image.",
             font=ctk.CTkFont(size=13),
             text_color=("gray40", "gray70"),
             justify="left"
         ).pack(anchor="w", padx=28, pady=(0, 32))
 
-        self.ref_button = ctk.CTkButton(
-            self.sidebar,
+        ctk.CTkButton(
+            sidebar,
             text="   Reference Image",
             height=48,
             corner_radius=12,
             font=ctk.CTkFont(size=14, weight="bold"),
             command=self.choose_reference
-        )
-        self.ref_button.pack(fill="x", padx=24, pady=7)
+        ).pack(fill="x", padx=24, pady=7)
 
         self.ref_label = ctk.CTkLabel(
-            self.sidebar,
+            sidebar,
             text="No reference selected",
             font=ctk.CTkFont(size=11),
             text_color=("gray45", "gray65"),
@@ -151,18 +128,17 @@ class PhotoMosaicApp(ctk.CTk):
         )
         self.ref_label.pack(fill="x", padx=28, pady=(0, 12))
 
-        self.target_button = ctk.CTkButton(
-            self.sidebar,
+        ctk.CTkButton(
+            sidebar,
             text="   Target Image",
             height=48,
             corner_radius=12,
             font=ctk.CTkFont(size=14, weight="bold"),
             command=self.choose_target
-        )
-        self.target_button.pack(fill="x", padx=24, pady=7)
+        ).pack(fill="x", padx=24, pady=7)
 
         self.target_label = ctk.CTkLabel(
-            self.sidebar,
+            sidebar,
             text="No target selected",
             font=ctk.CTkFont(size=11),
             text_color=("gray45", "gray65"),
@@ -171,7 +147,7 @@ class PhotoMosaicApp(ctk.CTk):
         self.target_label.pack(fill="x", padx=28, pady=(0, 24))
 
         # Density card
-        density_card = ctk.CTkFrame(self.sidebar, corner_radius=14)
+        density_card = ctk.CTkFrame(sidebar, corner_radius=14)
         density_card.pack(fill="x", padx=20, pady=8)
 
         ctk.CTkLabel(
@@ -185,12 +161,11 @@ class PhotoMosaicApp(ctk.CTk):
         density_row = ctk.CTkFrame(density_card, fg_color="transparent")
         density_row.pack(fill="x", padx=16, pady=(4, 0))
 
-        self.density_label = ctk.CTkLabel(
+        ctk.CTkLabel(
             density_row,
             textvariable=self.density_value,
             font=ctk.CTkFont(size=25, weight="bold")
-        )
-        self.density_label.pack(side="left")
+        ).pack(side="left")
 
         ctk.CTkLabel(
             density_row,
@@ -211,7 +186,7 @@ class PhotoMosaicApp(ctk.CTk):
 
         # Bottom status
         self.status_dot = ctk.CTkLabel(
-            self.sidebar,
+            sidebar,
             text="●  Ready",
             font=ctk.CTkFont(size=12),
             text_color=("gray50", "gray70"),
@@ -252,22 +227,21 @@ class PhotoMosaicApp(ctk.CTk):
             text_color=("gray45", "gray65")
         ).grid(row=1, column=0, sticky="w", pady=(4, 16))
 
-        self.preview = ctk.CTkFrame(main, corner_radius=18)
-        self.preview.grid(row=2, column=0, sticky="nsew")
-        self.preview.grid_columnconfigure((0, 1), weight=1)
-        self.preview.grid_rowconfigure(1, weight=1)
+        preview = ctk.CTkFrame(main, corner_radius=18)
+        preview.grid(row=2, column=0, sticky="nsew")
+        preview.grid_columnconfigure((0, 1), weight=1)
+        preview.grid_rowconfigure(1, weight=1)
 
         # Reference preview
-        self.ref_title = ctk.CTkLabel(
-            self.preview,
+        ctk.CTkLabel(
+            preview,
             text="REFERENCE",
             font=ctk.CTkFont(size=12, weight="bold"),
             text_color=("gray45", "gray65")
-        )
-        self.ref_title.grid(row=0, column=0, sticky="w", padx=20, pady=(18, 7))
+        ).grid(row=0, column=0, sticky="w", padx=20, pady=(18, 7))
 
         self.ref_preview = ctk.CTkLabel(
-            self.preview,
+            preview,
             text="Choose an image",
             corner_radius=12,
             fg_color=("gray90", "gray17"),
@@ -276,16 +250,15 @@ class PhotoMosaicApp(ctk.CTk):
         self.ref_preview.grid(row=1, column=0, sticky="nsew", padx=(20, 10), pady=(0, 20))
 
         # Target preview
-        self.target_title = ctk.CTkLabel(
-            self.preview,
+        ctk.CTkLabel(
+            preview,
             text="TARGET",
             font=ctk.CTkFont(size=12, weight="bold"),
             text_color=("gray45", "gray65")
-        )
-        self.target_title.grid(row=0, column=1, sticky="w", padx=10, pady=(18, 7))
+        ).grid(row=0, column=1, sticky="w", padx=10, pady=(18, 7))
 
         self.target_preview = ctk.CTkLabel(
-            self.preview,
+            preview,
             text="Choose an image",
             corner_radius=12,
             fg_color=("gray90", "gray17"),
@@ -294,12 +267,12 @@ class PhotoMosaicApp(ctk.CTk):
         self.target_preview.grid(row=1, column=1, sticky="nsew", padx=(10, 20), pady=(0, 20))
 
         # Result controls
-        self.action_bar = ctk.CTkFrame(main, fg_color="transparent")
-        self.action_bar.grid(row=3, column=0, sticky="ew", pady=(15, 0))
-        self.action_bar.grid_columnconfigure(0, weight=1)
+        action_bar = ctk.CTkFrame(main, fg_color="transparent")
+        action_bar.grid(row=3, column=0, sticky="ew", pady=(15, 0))
+        action_bar.grid_columnconfigure(0, weight=1)
 
         self.result_status = ctk.CTkLabel(
-            self.action_bar,
+            action_bar,
             text="No mosaic generated yet.",
             font=ctk.CTkFont(size=12),
             text_color=("gray45", "gray65")
@@ -307,7 +280,7 @@ class PhotoMosaicApp(ctk.CTk):
         self.result_status.grid(row=0, column=0, sticky="w")
 
         self.see_button = ctk.CTkButton(
-            self.action_bar,
+            action_bar,
             text="See Result",
             width=120,
             height=40,
@@ -318,7 +291,7 @@ class PhotoMosaicApp(ctk.CTk):
         self.see_button.grid(row=0, column=1, padx=6)
 
         self.save_button = ctk.CTkButton(
-            self.action_bar,
+            action_bar,
             text="Save",
             width=100,
             height=40,
@@ -329,7 +302,7 @@ class PhotoMosaicApp(ctk.CTk):
         self.save_button.grid(row=0, column=2)
 
     def update_density(self, value):
-        self.density_value.set(str(int(float(value))))
+        self.density_value.set(str(int(value)))
 
     def choose_reference(self):
         path = filedialog.askopenfilename(
@@ -375,9 +348,6 @@ class PhotoMosaicApp(ctk.CTk):
         )
 
     def generate(self):
-        global img, shrek_img, size_img, size_shrek, d
-        global img_dic, img_tiles, shrek_dic, match, craft
-
         if self.busy:
             return
 
@@ -388,7 +358,7 @@ class PhotoMosaicApp(ctk.CTk):
             )
             return
 
-        d = int(float(self.density_slider.get()))
+        d = int(self.density_slider.get())
 
         self.busy = True
         self.generate_button.configure(state="disabled", text="Generating...")
@@ -397,41 +367,26 @@ class PhotoMosaicApp(ctk.CTk):
         self.result_status.configure(text="Processing mosaic...")
         self.set_status("Generating", busy=True)
 
-        threading.Thread(target=self._run_generation, daemon=True).start()
+        threading.Thread(target=self._run_generation, args=(d,), daemon=True).start()
 
-    def _run_generation(self):
-        global img, shrek_img, size_img, size_shrek
-        global img_dic, img_tiles, shrek_dic, match, craft
-
+    def _run_generation(self, d):
         try:
             start = time.perf_counter()
-
-            img = Image.open(self.reference_path).convert('RGB')
-            size_img = img.size
-
-            shrek_img = Image.open(self.target_path).convert('RGB')
-            size_shrek = shrek_img.size
-
-            img_dic, img_tiles = image()
-            shrek_dic = shrek()
-            match = closest_rgb(shrek_dic, img_dic)
-            craft = crafter()
-
+            self.result_image = Mosaic(self.reference_path, self.target_path, d).build()
             elapsed = (time.perf_counter() - start) / 60
-            self.result_image = craft.copy()
 
-            self.after(0, self._generation_done, elapsed)
+            self.after(0, self._generation_done, elapsed, d)
 
         except Exception as exc:
             self.after(0, self._generation_error, str(exc))
 
-    def _generation_done(self, elapsed):
+    def _generation_done(self, elapsed, d):
         self.busy = False
         self.generate_button.configure(state="normal", text="Generate Mosaic")
         self.see_button.configure(state="normal")
         self.save_button.configure(state="normal")
         self.result_status.configure(
-            text=f"Mosaic ready • {elapsed:.2f} min • density {int(float(self.density_slider.get()))}"
+            text=f"Mosaic ready • {elapsed:.2f} min • density {d}"
         )
         self.set_status("Ready")
 
@@ -486,21 +441,19 @@ class PhotoMosaicApp(ctk.CTk):
             text_color=("gray45", "gray65")
         ).pack(anchor="w", padx=18, pady=(16, 8))
 
-        before_label = ctk.CTkLabel(
-            before_frame, text="", corner_radius=10
-        )
+        before_label = ctk.CTkLabel(before_frame, text="", corner_radius=10)
         before_label.pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
-        after_label = ctk.CTkLabel(
-            after_frame, text="", corner_radius=10
-        )
+        after_label = ctk.CTkLabel(after_frame, text="", corner_radius=10)
         after_label.pack(fill="both", expand=True, padx=16, pady=(0, 16))
+
+        target_image = Image.open(self.target_path).convert("RGB")
 
         def update_viewer():
             max_w = max(before_frame.winfo_width() - 32, 250)
             max_h = max(before_frame.winfo_height() - 72, 250)
 
-            before = Image.open(self.target_path).convert("RGB")
+            before = target_image.copy()
             after = self.result_image.copy()
 
             before.thumbnail((max_w, max_h))
@@ -521,10 +474,9 @@ class PhotoMosaicApp(ctk.CTk):
         if self.result_image is None:
             return
 
-        default_name = "converted_img.jpg"
         save_path = filedialog.asksaveasfilename(
             title="Save Mosaic",
-            initialfile=default_name,
+            initialfile="converted_img.jpg",
             initialdir=str(Path.home() / "image_converter"),
             defaultextension=".jpg",
             filetypes=[
@@ -538,13 +490,7 @@ class PhotoMosaicApp(ctk.CTk):
             return
 
         try:
-            output = self.result_image
-            suffix = Path(save_path).suffix.lower()
-
-            if suffix in (".jpg", ".jpeg") and output.mode != "RGB":
-                output = output.convert("RGB")
-
-            output.save(save_path)
+            self.result_image.save(save_path)
 
             self.result_status.configure(
                 text=f"Saved • {Path(save_path).name}"
@@ -556,6 +502,7 @@ class PhotoMosaicApp(ctk.CTk):
         except Exception as exc:
             messagebox.showerror("Save Error", str(exc))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app = PhotoMosaicApp()
     app.mainloop()
